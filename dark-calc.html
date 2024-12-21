@@ -2,24 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Simple Dark Mode Calculator with History</title>
+  <title>Dark Mode Calculator</title>
+
   <style>
-    /* === Dark Mode Styles === */
-    body {
-      background-color: #222;
-      color: #f1f1f1;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      height: 100vh;
-      overflow: hidden; /* Hide scrollbars if the history grows large */
+    /*
+      1) Define two sets of color variables:
+         - :root for the default (dark) theme
+         - .theme-solarized for the Solarized Dark theme
+    */
+
+    :root {
+      /* Default (current) Dark Theme */
+      --bg-color: #222;
+      --text-color: #f1f1f1;
+      --header-bg: #333;
+      --header-text: #f1f1f1;
+
+      --calc-bg: #333;
+      --display-bg: #222;
+
+      --button-bg: #444;
+      --button-hover: #555;
+      --button-active: #666;
+      --button-text: #f1f1f1;
+
+      --equal-bg: #009999;
+      --equal-hover: #00b3b3;
+
+      --clear-bg: #cc0000;
+      --clear-hover: #e60000;
+
+      --history-bg: #333;
+      --history-text: #f1f1f1;
     }
 
-    /* Container holds calculator on left, history on right */
+    /* Solarized Dark variables */
+    /* Ref: https://ethanschoonover.com/solarized/ */
+    .theme-solarized {
+      --bg-color: #002b36;       /* base03 */
+      --text-color: #839496;     /* base0 */
+      --header-bg: #073642;      /* base02 */
+      --header-text: #93a1a1;    /* base1 */
+
+      --calc-bg: #073642;        /* base02 */
+      --display-bg: #002b36;     /* base03 */
+
+      --button-bg: #586e75;      /* base01 */
+      --button-hover: #657b83;   /* base00 */
+      --button-active: #93a1a1;  /* base1 */
+      --button-text: #fdf6e3;    /* base3 for better contrast */
+
+      /*
+        Change the "equals" ( = ) accent color to blue
+        and the "clear" ( C ) accent color to orange.
+      */
+      --equal-bg: #268bd2;       /* blue */
+      --equal-hover: #3692e2;    /* slightly lighter blue */
+
+      --clear-bg: #cb4b16;       /* orange */
+      --clear-hover: #e8643b;    /* a brighter orange */
+
+      --history-bg: #073642;     /* base02 */
+      --history-text: #839496;   /* base0 */
+    }
+
+
+    /* ================ Global Layout ================ */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+
+      /* Switch all references to CSS variables */
+      background-color: var(--bg-color);
+      color: var(--text-color);
+
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      background-color: var(--header-bg);
+      color: var(--header-text);
+      padding: 10px 0;
+    }
+
+    /* ================ Theme Switcher ================ */
+    .theme-switcher {
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;  /* some spacing below header */
+    }
+
+    .theme-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 5px;
+      border: 2px solid var(--header-text); /* small border so they stand out */
+    }
+
+    /* Default dark theme swatch */
+    .theme-default-btn {
+      background-color: #444; /* roughly your default button bg */
+    }
+
+    /* Solarized swatch */
+    .theme-solarized-btn {
+      background-color: #073642; /* base02, typical for solarized dark */
+    }
+
+    /* ============== Main Container ============== */
     .container {
       display: flex;
-      margin: auto; /* center horizontally and vertically in window */
+      flex: 1;
+      justify-content: center;  /* center horizontally */
+      align-items: center;      /* center vertically */
     }
 
     /* === Calculator === */
@@ -27,29 +128,29 @@
       display: grid;
       grid-template-columns: repeat(4, 60px);
       grid-gap: 10px;
-      background-color: #333;
+      background-color: var(--calc-bg);
       padding: 20px;
       border-radius: 10px;
     }
 
     .display {
       grid-column: span 4;
-      background-color: #222;
+      background-color: var(--display-bg);
       font-size: 2rem;
       text-align: right;
       padding: 10px;
       border: none;
       outline: none;
       border-radius: 5px;
-      color: #f1f1f1;
+      color: var(--text-color);
       margin-bottom: 10px;
     }
 
     button {
       font-size: 1.2rem;
       padding: 10px;
-      background-color: #444;
-      color: #f1f1f1;
+      background-color: var(--button-bg);
+      color: var(--button-text);
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -57,37 +158,35 @@
     }
 
     button:hover {
-      background-color: #555;
+      background-color: var(--button-hover);
     }
 
     button:active {
-      background-color: #666;
+      background-color: var(--button-active);
     }
 
     .equal {
       grid-column: span 2;
-      background-color: #009999;
+      background-color: var(--equal-bg);
     }
-
     .equal:hover {
-      background-color: #00b3b3;
+      background-color: var(--equal-hover);
     }
 
     .clear {
-      background-color: #cc0000;
+      background-color: var(--clear-bg);
     }
-
     .clear:hover {
-      background-color: #e60000;
+      background-color: var(--clear-hover);
     }
 
     /* === History Sidebar === */
     .history-container {
-      margin-left: 20px;  /* space between calculator and history */
-      max-height: 400px;  /* adjust as desired */
-      width: 200px;       /* fixed sidebar width */
-      overflow-y: auto;   /* allow vertical scrolling if history grows */
-      background-color: #333;
+      margin-left: 20px;
+      max-height: 400px;
+      width: 200px;
+      overflow-y: auto;
+      background-color: var(--history-bg);
       border-radius: 10px;
       padding: 10px;
     }
@@ -96,11 +195,13 @@
       margin-top: 0;
       font-size: 1rem;
       text-align: center;
+      color: var(--text-color);
     }
 
     .history-list {
-      font-size: 0.8rem; /* small font for the history */
+      font-size: 0.8rem;
       line-height: 1.4;
+      color: var(--history-text);
     }
 
     .history-list p {
@@ -111,6 +212,24 @@
 </head>
 
 <body>
+  <!-- Header -->
+  <header>
+    <h1>Dark Calculator</h1>
+  </header>
+
+  <!-- Theme Switcher (Two Small Colored Squares) -->
+  <div class="theme-switcher">
+    <div class="theme-btn theme-default-btn"
+         title="Default Dark"
+         onclick="setTheme('default')">
+    </div>
+    <div class="theme-btn theme-solarized-btn"
+         title="Solarized Dark"
+         onclick="setTheme('solarized')">
+    </div>
+  </div>
+
+  <!-- Main container (calculator + history) -->
   <div class="container">
     <!-- Calculator -->
     <div class="calculator">
@@ -149,6 +268,23 @@
   </div>
 
   <script>
+    /* ======================
+       THEME TOGGLING LOGIC
+       ====================== */
+    function setTheme(themeName) {
+      if (themeName === 'solarized') {
+        document.body.classList.add('theme-solarized');
+      } else {
+        document.body.classList.remove('theme-solarized');
+      }
+    }
+
+    // Default theme on load (optional):
+    setTheme('default');
+
+    /* ======================
+       CALCULATOR LOGIC
+       ====================== */
     const display = document.getElementById('display');
     const buttons = document.querySelectorAll('button');
     const historyContainer = document.getElementById('history');
@@ -194,6 +330,7 @@
       }
     });
 
+    // Interpret input
     function handleInput(value) {
       switch (value) {
         case '+':
@@ -241,7 +378,7 @@
       }
     }
 
-    // Perform calculation and display result
+    // Perform the calculation
     function calculateResult() {
       const currentValue = parseFloat(currentInput);
 
@@ -263,25 +400,26 @@
 
       updateDisplay(result);
 
-      // If no error, add to history
       if (result !== 'Error') {
         logToHistory(storedValue, operator, currentValue, result);
         storedValue = result;
+        // Keep the result in currentInput to allow chaining (e.g. +5 after pressing =)
+        currentInput = String(result);
       } else {
         storedValue = null;
+        currentInput = '';
       }
       operator = null;
-      currentInput = '';
     }
 
-    // Add a line to history, e.g. "7 + 3 = 10"
+    // Log the calculation in the history
     function logToHistory(lhs, op, rhs, res) {
       const historyLine = `${lhs} ${op} ${rhs} = ${res}`;
       const p = document.createElement('p');
       p.textContent = historyLine;
       historyContainer.appendChild(p);
 
-      // Optionally auto-scroll history to bottom
+      // Auto-scroll history to the bottom
       historyContainer.scrollTop = historyContainer.scrollHeight;
     }
   </script>
