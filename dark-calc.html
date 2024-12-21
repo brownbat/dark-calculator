@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Dark Mode Calculator with History</title>
+  <style>
+    /* === Dark Mode Styles === */
+    body {
+      background-color: #222;
+      color: #f1f1f1;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden; /* Hide scrollbars if the history grows large */
+    }
+
+    /* Container holds calculator on left, history on right */
+    .container {
+      display: flex;
+      margin: auto; /* center horizontally and vertically in window */
+    }
+
+    /* === Calculator === */
+    .calculator {
+      display: grid;
+      grid-template-columns: repeat(4, 60px);
+      grid-gap: 10px;
+      background-color: #333;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .display {
+      grid-column: span 4;
+      background-color: #222;
+      font-size: 2rem;
+      text-align: right;
+      padding: 10px;
+      border: none;
+      outline: none;
+      border-radius: 5px;
+      color: #f1f1f1;
+      margin-bottom: 10px;
+    }
+
+    button {
+      font-size: 1.2rem;
+      padding: 10px;
+      background-color: #444;
+      color: #f1f1f1;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #555;
+    }
+
+    button:active {
+      background-color: #666;
+    }
+
+    .equal {
+      grid-column: span 2;
+      background-color: #009999;
+    }
+
+    .equal:hover {
+      background-color: #00b3b3;
+    }
+
+    .clear {
+      background-color: #cc0000;
+    }
+
+    .clear:hover {
+      background-color: #e60000;
+    }
+
+    /* === History Sidebar === */
+    .history-container {
+      margin-left: 20px;  /* space between calculator and history */
+      max-height: 400px;  /* adjust as desired */
+      width: 200px;       /* fixed sidebar width */
+      overflow-y: auto;   /* allow vertical scrolling if history grows */
+      background-color: #333;
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    .history-container h2 {
+      margin-top: 0;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .history-list {
+      font-size: 0.8rem; /* small font for the history */
+      line-height: 1.4;
+    }
+
+    .history-list p {
+      margin: 5px 0;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Calculator -->
+    <div class="calculator">
+      <!-- Display -->
+      <input type="text" class="display" id="display" readonly />
+
+      <!-- Buttons -->
+      <button data-value="7">7</button>
+      <button data-value="8">8</button>
+      <button data-value="9">9</button>
+      <button class="clear" data-value="C">C</button>
+
+      <button data-value="4">4</button>
+      <button data-value="5">5</button>
+      <button data-value="6">6</button>
+      <button data-value="/">/</button>
+
+      <button data-value="1">1</button>
+      <button data-value="2">2</button>
+      <button data-value="3">3</button>
+      <button data-value="*">*</button>
+
+      <button data-value="0">0</button>
+      <button data-value=".">.</button>
+      <button data-value="-">-</button>
+      <button data-value="+">+</button>
+
+      <button class="equal" data-value="=">=</button>
+    </div>
+
+    <!-- History Sidebar -->
+    <div class="history-container">
+      <h2>History</h2>
+      <div class="history-list" id="history"></div>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display');
+    const buttons = document.querySelectorAll('button');
+    const historyContainer = document.getElementById('history');
+
+    let currentInput = '';
+    let operator = null;
+    let storedValue = null;
+
+    // Update display
+    function updateDisplay(value) {
+      display.value = value;
+    }
+
+    // Handle button clicks
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const value = button.getAttribute('data-value');
+        handleInput(value);
+      });
+    });
+
+    // Handle keyboard input
+    document.addEventListener('keydown', (event) => {
+      // For Enter or NumpadEnter => '='
+      if (event.key === 'Enter' || event.key === 'NumpadEnter') {
+        event.preventDefault();
+        handleInput('=');
+      }
+      // For Backspace => 'C'
+      else if (event.key === 'Backspace') {
+        handleInput('C');
+      }
+      // Prevent default slash behavior, then handle it ourselves
+      else if (event.key === '/') {
+        event.preventDefault();
+        handleInput('/');
+      }
+      else {
+        const validKeys = '0123456789+-*.=';
+        if (validKeys.includes(event.key)) {
+          handleInput(event.key);
+        }
+      }
+    });
+
+    function handleInput(value) {
+      switch (value) {
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+          if (currentInput) {
+            // If there's already a stored value and operator, evaluate first
+            if (storedValue !== null && operator !== null) {
+              calculateResult();
+            } else {
+              storedValue = parseFloat(currentInput);
+            }
+            operator = value;
+            currentInput = '';
+          }
+          break;
+
+        case '=':
+          if (storedValue !== null && operator !== null && currentInput) {
+            calculateResult();
+          }
+          break;
+
+        case 'C': // Clear
+          currentInput = '';
+          storedValue = null;
+          operator = null;
+          updateDisplay('');
+          break;
+
+        case '.':
+          if (!currentInput.includes('.')) {
+            currentInput += '.';
+            updateDisplay(currentInput);
+          }
+          break;
+
+        default:
+          // Digits (0-9)
+          if (!isNaN(value)) {
+            currentInput += value;
+            updateDisplay(currentInput);
+          }
+      }
+    }
+
+    // Perform calculation and display result
+    function calculateResult() {
+      const currentValue = parseFloat(currentInput);
+
+      let result;
+      switch (operator) {
+        case '+':
+          result = storedValue + currentValue;
+          break;
+        case '-':
+          result = storedValue - currentValue;
+          break;
+        case '*':
+          result = storedValue * currentValue;
+          break;
+        case '/':
+          result = currentValue === 0 ? 'Error' : storedValue / currentValue;
+          break;
+      }
+
+      updateDisplay(result);
+
+      // If no error, add to history
+      if (result !== 'Error') {
+        logToHistory(storedValue, operator, currentValue, result);
+        storedValue = result;
+      } else {
+        storedValue = null;
+      }
+      operator = null;
+      currentInput = '';
+    }
+
+    // Add a line to history, e.g. "7 + 3 = 10"
+    function logToHistory(lhs, op, rhs, res) {
+      const historyLine = `${lhs} ${op} ${rhs} = ${res}`;
+      const p = document.createElement('p');
+      p.textContent = historyLine;
+      historyContainer.appendChild(p);
+
+      // Optionally auto-scroll history to bottom
+      historyContainer.scrollTop = historyContainer.scrollHeight;
+    }
+  </script>
+</body>
+</html>
